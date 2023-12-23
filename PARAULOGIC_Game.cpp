@@ -9,46 +9,46 @@
 #include <algorithm>
 #include <map>
 #include <random>
-
 using namespace std;
 
-// Function to verify the letters
+
+
 enum VerificationResult {
     ContainsCentralAndGivenLetters,
     ContainsCentralButGivenLettersNotThere,
     DoesNotContainCenterAndLettersGiven,
     DoesNotContainCenterAndGivenLettersNotThere
 };
-// Function to check if a character is a vowel
 bool isVowel(char);
-// This function receive two parameters one is Played letter string and second is user input string.
-//It will return the four cases
 VerificationResult Verify_letters(const string& , const string&);
 bool Exists(const string& word, vector<string>& , int& );
 bool hasSameSetOfLetters(const string& , const string&);
 vector<string> findWordsWithSameLetters(const string& , const vector<string>& );
-// map<string, int> findWordsWithSameLetters(const string& , const vector<string>& );
-
 void displayCombinations(const vector<string>& , char , char , int );
 string sortString(const string& );
 bool isInDictionary(const string& , const vector<string>& );
+void printHelp();
+string normalizeWord(const string&);
 
 
-
-
-// Vector to store words
 vector<string> words;
 vector<string> foundWords;
 int subtractPoints = 0;
 int limitAttempts = 0;
+bool checkNoPlayers = false;
+map<string, int> players;
+
+
 
 int main(int argc, char *argv[]) {
     // Default file name
     string fileName = "Palabras.txt";
 
-    const int WORD_SIZE = 10;
+    const int WORD_SIZE = 7;
 
     int score = 0;
+    int *previousScore = new int[WORD_SIZE];
+    int noPlayers = 1;
     string exitProgram = "@exit";
     string help="@help";
     string hint = "@hint";
@@ -61,8 +61,10 @@ int main(int argc, char *argv[]) {
     string difficulty = "@difficulty";
     string attempts = "@attempts";
     string ranking = "@ranking";
+    string surrender = "@surrender";
     bool checkLimitAttempts = false;
     bool checkDifficult = false;
+
 
     // Check if a command-line argument is provided
     if (argc > 1) {
@@ -102,14 +104,11 @@ int main(int argc, char *argv[]) {
         srand(static_cast<unsigned>(time(NULL)));
         int randomIndex = rand() % words.size();
         string chosenWord = words[randomIndex];
-        // Display the chosen word
-        // cout << "\n\nRandomly chosen word: " << chosenWord << endl;
 
         // Find the middle letter
         size_t middleIndex = chosenWord.length() / 2;
         char middleLetter = chosenWord[middleIndex];
 
-        // middleLetter = 'c';
 
         // Keep all unique letters without repeating
         string uniqueLetters = "";
@@ -118,9 +117,6 @@ int main(int argc, char *argv[]) {
                 uniqueLetters += c;
             }
         }
-
-        // Display unique letters
-        // cout << "Unique letters: " << uniqueLetters << endl;
 
         // Save all unique letters to play in a string
         string lettersToPlay = uniqueLetters;
@@ -163,9 +159,6 @@ int main(int argc, char *argv[]) {
         // Display the final string of letters to play
         cout << endl << "Letters to play: " << lettersToPlay << endl << endl;
 
-        // lettersToPlay = "groceiy";
-
-
         cout << "-----------------------------------------------------------------------------------------------" << endl << endl;
         int size = lettersToPlay.size() / 2 + 1;
         int stringIterator = 0;
@@ -203,31 +196,33 @@ int main(int argc, char *argv[]) {
             }
             cout << endl;
         }
-        
-        // cout << lettersToPlay
-        // cout << "Middle letter: " << middleLetter << endl;
 
         cout << endl << "-----------------------------------------------------------------------------------------------" << endl << endl;
 
+        
         string userEnteredLetters;
+
 
         while(userEnteredLetters != exitProgram) {
             // Prompt the user to enter their word
             cout << "Please Enter Your Word: ";
             cin >> userEnteredLetters;
 
+            // It handles the capitals letters and special letters
+
+            userEnteredLetters = normalizeWord(userEnteredLetters);
 
             if (userEnteredLetters == hint) {
-// find all matching words
+                // find all matching words
 
-            // Sort the user input string
+                // Sort the user input string
 
                 // Find words with the same set of letters
                 vector<string> matchingWords = findWordsWithSameLetters(lettersToPlay, words);
 
                 // Find all words in the dictionary with the same sorted characters
 
-                    // Merge and count occurrences based on the first two letters
+                // Merge and count occurrences based on the first two letters
                 map<string, int> mergedWordCounts;
             
                 for (const string& word : matchingWords) {
@@ -243,7 +238,17 @@ int main(int argc, char *argv[]) {
             }
             else if (userEnteredLetters == help) {
                 // possible help
+
+                printHelp();
+
             }
+
+            else if (userEnteredLetters == ranking) {
+
+                cout << "Your Current Score: " << score << endl;
+                
+            }
+
 
             else if (userEnteredLetters == found) {
                 string sortedUserInput = sortString(lettersToPlay);
@@ -263,7 +268,7 @@ int main(int argc, char *argv[]) {
                 cout << "Score You Obtained: " << score << endl;
             }
 
-            else if (userEnteredLetters == show) {
+            else if (userEnteredLetters == show || userEnteredLetters == surrender) {
                 string sortedUserInput = sortString(lettersToPlay);
                 
                 vector<string> similarWords;
@@ -273,9 +278,10 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
+                cout<<"The word found with set of letters that it will always contain the central letter\n";
                 for (const auto& foundWord : similarWords) {
                     if (foundWord[foundWord.size()/2] == middleLetter)
-                        cout<<"The word found with set of letters that it will always contain the central letter\n " << foundWord << endl;
+                        cout<<"Word: " << foundWord << endl;
                 }
             } 
             else if (userEnteredLetters == shuffle) {
@@ -325,9 +331,6 @@ int main(int argc, char *argv[]) {
                     }
                     cout << endl;
                 }
-                
-                // cout << lettersToPlay
-                // cout << "Middle letter: " << middleLetter << endl;
 
                 cout << endl << "-----------------------------------------------------------------------------------------------" << endl << endl;
             }
@@ -380,7 +383,7 @@ int main(int argc, char *argv[]) {
                 
             }
 
-            else {
+            else if (userEnteredLetters != exitProgram) {
 
                 // Verify letters and display the result
                 VerificationResult result = Verify_letters(lettersToPlay, userEnteredLetters);
@@ -390,7 +393,7 @@ int main(int argc, char *argv[]) {
                         break;
                     case VerificationResult::ContainsCentralButGivenLettersNotThere:
                         cout << "Contains central, but the given letters are not there" << endl;
-                        if (checkDifficult) { score-=subtractPoints; } if(checkLimitAttempts) { limitAttempts--; }
+                        if (!checkNoPlayers) { if (checkDifficult) { score-=subtractPoints; } if(checkLimitAttempts) { limitAttempts--; } }
                         break;
                     case VerificationResult::DoesNotContainCenterAndLettersGiven:
                         cout << "Does not contain a center, but the letters are given" << endl;
@@ -411,35 +414,28 @@ int main(int argc, char *argv[]) {
 
                     if (wordCounts.size() == 0) {
                         cout << "Congratulation: All Words Have Been Found With The Set Of Letters\nThank You! Good Bye!\n";
-                        cout << "Your Score" << endl;
-                        
-                        for (vector<int>::iterator it = allScore.begin(); it != allScore.end(); ++it) {
-                            cout << "Previous Score: " << *it << endl;
-                        }
+                        cout << "Your Score" << score << endl;
+                        char response = '\0';
 
-                        // cout << ""
+                        cout<<"If you want to play another game please type y / Y : ";
+                        cin >> response;
+                        if (response == 'y' || response == 'Y') {
+                            goto start_game;                    
+                        }
+                        else {
+                            cout << "Game Closed! Thank you! "<<endl;
+                            exit(EXIT_SUCCESS);
+                        }
                         
-                        
-                        exit(EXIT_SUCCESS);
                     }
                 }
 
 
-
-                // if (wordCounts.size() == 0) {
-                //     cout << "Congratulation: All Words Have Been Found With The Set Of Letters\nThank You! Good Bye!\n";
-                //     exit(EXIT_SUCCESS);
-                // }
-
             }
 
-             
-
-            // // Display matching words
-            // for (const string& word : matchingWords) {
-            //     cout << word << endl;
-            // }
-
+            else {
+                cout << "Game Finished! " << endl ;
+            }
             
 
         }
@@ -523,27 +519,11 @@ bool Exists(const string& word, vector<string>& wordVector, int& score) {
         // Word exists in the vector
         cout << "Yeah! Word Found." << endl;
 
+
         score += 5;
         cout << "Score increased by 5 points." << endl;
         foundWords.push_back(word);
         wordVector.erase(it);
-
-        // vector<string> wordCounts = findWordsWithSameLetters(lettersToPlay, words);
-
-        // if (wordCounts.size() == 0) {
-        //     cout << "Congratulation: All Words Have Been Found With The Set Of Letters\nThank You! Good Bye!\n";
-        //     cout << "Your Score" << endl;
-            
-        //     for (vector<int>::iterator it = allScore.begin(); it != allScore.end(); ++it) {
-        //         cout << "Previous Score: " << *it << endl;
-        
-        //     // cout << ""
-            
-            
-        //     exit(EXIT_SUCCESS);
-        // }
-
-
         return true;
     } else if (it == wordVector.end() && checkWord == foundWords.end()) {
         // Word does not exist in the vector
@@ -583,22 +563,6 @@ vector<string> findWordsWithSameLetters(const string& userInput, const vector<st
 }
 
 
-// Function to find words with the same set of letters in the vector
-// map<string, int> findWordsWithSameLetters(const string& userInput, const vector<string>& wordVector) {
-//     map<string, int> wordCounts;
-
-//     for (const std::string& word : wordVector) {
-//         if (hasSameSetOfLetters(word, userInput)) {
-//             // Extract the first two letters
-//             string key = word.substr(0, 2);
-
-//             // Increment the count if the key is already present, otherwise, add a new entry
-//             wordCounts[key]++;
-//         }
-//     }
-
-//     return wordCounts;
-// }
 // Function to display combinations and their occurrences
 void displayCombinations(const vector<string>& dictionary, char firstLetter, char secondLetter, int maxWordSize) {
     // Map to store combinations and their occurrences
@@ -634,4 +598,32 @@ string sortString(const string& s) {
 // Function to check if a sorted word is in the dictionary
 bool isInDictionary(const string& sortedWord, const vector<string>& dictionary) {
     return binary_search(dictionary.begin(), dictionary.end(), sortedWord);
+}
+
+void printHelp() {
+    cout << "Game Instructions:\n"
+              << "1. Form a word with the given letters.\n"
+              << "2. You have unlimited attempts.\n"
+              << "3. Use the following commands:\n"
+              << "   - @help: Display game instructions and possible help commands.\n"
+              << "   - @exit: Exit the program.\n"
+              << "   - @hint: Show combinations of the first two letters and their frequency in the dictionary.\n"
+              << "   - @found: Show all found/matched words with the set of letters.\n"
+              << "   - @score: Show the current score.\n"
+              << "   - @show: Display the number of possible words and missing combinations.\n"
+              << "Have fun!\n"
+              << std::endl;
+}
+
+// Function to normalize a word by converting to lowercase and removing special characters (excluding '@')
+string normalizeWord(const string& word) {
+    string normalizedWord = word;
+
+    // Convert to lowercase
+    transform(normalizedWord.begin(), normalizedWord.end(), normalizedWord.begin(), ::tolower);
+
+    // Remove special characters excluding '@'
+    normalizedWord.erase(remove_if(normalizedWord.begin(), normalizedWord.end(), [](char c) { return !isalnum(c) && c != '@'; }), normalizedWord.end());
+
+    return normalizedWord;
 }
